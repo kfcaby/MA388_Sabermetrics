@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1578602263274.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "837675089",
+    "id" : "8DBDCBD0",
+    "lastKnownWriteTime" : 1578607819,
+    "last_content_update" : 1578607819122,
+    "path" : "~/Documents/MA388/Lesson2_Boardsheet.Rmd",
+    "project_path" : "Lesson2_Boardsheet.Rmd",
+    "properties" : {
+        "cursorPosition" : "38,130",
+        "scrollLine" : "29",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

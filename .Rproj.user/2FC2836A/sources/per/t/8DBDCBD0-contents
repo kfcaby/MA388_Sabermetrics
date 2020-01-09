@@ -1,0 +1,85 @@
+---
+title: "Lesson 2 - Intro to R tidyverse"
+author: "Kevin Cummiskey"
+date: "1/9/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Research Question: \textit{How (and why) has the rate of walks changed over the history of baseball?}
+
+Which Datafile from the Lahman package would you use to answer this question?
+
+\vspace{1in}
+
+```{r, message = FALSE}
+library(tidyverse)
+library(Lahman)
+
+Teams %>% head(2) 
+```
+
+On page 35 of the text, there is a list of the five main dplyr verbs (and group\_by).  Below, briefly describe what each does.
+
+* \texttt{select}
+
+* \texttt{filter}
+
+* \texttt{arrange}
+
+* \texttt{mutate}
+
+* \texttt{summarize}
+
+* \texttt{group\_by}
+
+Discuss how you could use these verbs and the Teams database to calculate the walk rate (per nine innings). Write your code below. \vspace{0.5in} 
+
+\newpage
+
+```{r}
+#Calculate the walk rate per 9 innings by season
+Teams %>% 
+  group_by(yearID) %>%
+  summarize(walks_per_game = sum(BB)/sum(G),
+            SO_per_game = sum(SO)/sum(G)) -> walks
+
+walks %>% head(3)
+```
+
+Let's look at a plot of the results.
+
+```{r, fig.height = 2.5}
+walks %>% 
+  ggplot(aes(x = yearID, y = walks_per_game)) +
+  geom_point()
+```
+
+What trends do you observe in walks? \vspace{0.75in}
+
+
+The previous plot tells us nothing about \texttt{why} we observe changes.  Briefly explain two other analyses we might conduct to better understand trends in walks. Identify the appropriate Datafiles for these analyses. \vspace{0.75in}
+
+
+Let's see if the ratio of walks to strikeouts tells us anything interesting. Without looking on the next page, write the code you would use to calculate the ratio of walks to strikeouts by season.
+
+```{r}
+walks = walks %>%
+  mutate(walks_SO_ratio = walks_per_game/SO_per_game)
+```
+
+```{r, fig.height=2.5}
+walks %>% 
+  ggplot(aes(x = yearID, y = walks_SO_ratio)) +
+  geom_point()
+```
+
+
+
+
+
+
+
