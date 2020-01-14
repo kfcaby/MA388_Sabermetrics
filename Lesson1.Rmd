@@ -1,0 +1,89 @@
+---
+title: "Lesson1"
+author: "Kevin Cummiskey"
+date: "January 8, 2020"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Welcome to MA388 Sabermetrics! 
+
+The purpose of today is to get to know each other and get started looking at some baseball data. If you're not proficient in R yet, no worries, please feel free to ask me or get help from someone around you.
+
+Who is your favorite baseball player?
+
+\vspace{0.25in}
+
+Find your favorite player's \texttt{playerID} in the Master table and write it below.  This ID will be used to access this player's data in other databases. See my code below for some assistance.
+
+\vspace{1in}
+
+```{r, message = FALSE, warning = FALSE}
+#my favorite player was Wade Boggs, UNTIL he became a Yankee
+library(Lahman)
+library(tidyverse)
+
+#get Boggs' player ID
+Master %>%
+  filter(nameLast == "Boggs", nameFirst == "Wade")
+```
+
+
+Find out something interesting about your player using the Batting, Pitching, or Fielding tables. Feel free to use my code below...if you don't understand the code at this point, it's okay!
+
+\vspace{2in}
+
+```{r, warning = FALSE}
+#I want to see if Wade Boggs had a higher batting average with the Red Sox or Yankees.
+
+#Extract Wade Boggs seasonal batting data
+boggs = Batting %>% 
+  filter(playerID == "boggswa01")
+
+#calculate batting average by team
+boggs %>% 
+  group_by(teamID) %>% 
+  summarize(BA = sum(H)/sum(AB))
+```
+
+
+\textbf{As I suspected, Wade Boggs was a better player when he was with the Red Sox!}
+
+```{r, fig.height=3}
+#plot his batting average by season
+boggs %>% 
+  ggplot(aes(x = yearID, y = H/AB, color = teamID)) +
+  geom_point() +
+  labs(x = "year", 
+       y = "batting average", 
+       title = "Wade Boggs batting average by year")
+```
+
+\newpage
+
+Please fill out the following information and return it to me before the end of class.
+
+* First Name:
+
+* Last Name:
+
+* Name you want me to call you:
+
+* Phone number I can reach you:
+
+* Favorite baseball team:
+
+* Academic Major:
+
+* Are there specific statistical methods you are interested in learning more about?
+
+\vspace{1in}
+
+* Are there specific areas of sabermetrics you are interested in learning more about?
+
+

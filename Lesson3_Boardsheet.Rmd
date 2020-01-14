@@ -1,0 +1,42 @@
+---
+title: "Lesson 3 - Intro to R tidyverse"
+author: "Kevin Cummiskey"
+date: "January 14, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(Lahman)
+```
+
+## Review
+
+Last class, we discussed the five tidyverse verbs (filter, select, mutate, summarize, arrange).  Use the Pitching database in the Lahman package to generate the table (Pitchers with 350 wins or more) on page 65 of the Marchi text.  Note the Pitching database contains one row for each pitcher for each season or stint (if the pitcher played for more than one team in a season).  For this problem, you can use playerID instead of full name in the table.  Write your code below.
+
+\vspace{2in}
+
+```{r, include = FALSE}
+Pitching %>%
+  group_by(playerID) %>%
+  summarize(W = sum(W, na.rm = TRUE),
+            L = sum(L, na.rm = TRUE),
+            SO = sum(SO, na.rm = TRUE),
+            BB = sum(BB, na.rm = TRUE)) %>%
+  filter(W > 349) -> Wins.350
+```
+
+How could you add the player's full name?  (hint: use the Master database.)
+
+\vspace{1in}
+
+
+```{r, include = FALSE}
+Wins.350 %>% 
+  left_join(Master %>% select(playerID, nameFirst, nameLast),
+            by = "playerID") %>%
+  mutate(player = paste(nameFirst,nameLast)) %>%
+  select(player, W, L, SO, BB) -> Wins.350
+```
+

@@ -19,7 +19,17 @@ Which Datafile from the Lahman package would you use to answer this question?
 library(tidyverse)
 library(Lahman)
 
-Teams %>% head(2) 
+Teams
+
+Teams %>% 
+  filter(yearID > 1919) %>%
+  select(yearID,BB,G) %>% 
+  arrange(desc(BB)) %>%
+  mutate(BBperGame = BB/G) %>%
+  head(10)
+
+Teams %>%
+  summarize(walk_rate = sum(BB, na.rm = TRUE)/sum(G))
 ```
 
 On page 35 of the text, there is a list of the five main dplyr verbs (and group\_by).  Below, briefly describe what each does.
