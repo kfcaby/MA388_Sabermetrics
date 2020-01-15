@@ -17,7 +17,7 @@ Last class, we discussed the five tidyverse verbs (filter, select, mutate, summa
 
 \vspace{2in}
 
-```{r, include = FALSE}
+```{r, warning= FALSE}
 Pitching %>%
   group_by(playerID) %>%
   summarize(W = sum(W, na.rm = TRUE),
@@ -32,7 +32,7 @@ How could you add the player's full name?  (hint: use the Master database.)
 \vspace{1in}
 
 
-```{r, include = FALSE}
+```{r, warning = FALSE}
 Wins.350 %>% 
   left_join(Master %>% select(playerID, nameFirst, nameLast),
             by = "playerID") %>%
