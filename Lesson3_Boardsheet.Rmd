@@ -40,3 +40,55 @@ Wins.350 %>%
   select(player, W, L, SO, BB) -> Wins.350
 ```
 
+## Pitching
+
+There has been a lot of discussion recently about the evolving use of relief pitchers.  Historically, starting pitchers were expected to go deep into the game and they frequently pitched the whole game.  In the last several years, teams have begun employing relief pitchers in highly specialized roles.  For a nice discussion on this, see Nate Silver's article ``Relievers Have Broken Baseball. We Have A Plan To Fix It." (\url{https://fivethirtyeight.com/features/relievers-have-broken-baseball-we-have-a-plan-to-fix-it/}) 
+
+1. What are some questions we would want to investigate to better understand how the use of relief pitchers has changed over time?
+
+\vspace{2in}
+
+### Complete Games
+
+For each season from 1970 to 2018, calculate the fraction of games each year that were complete games (hint: Teams database). Discuss two interesting results.
+
+\vspace{1in}
+
+```{r, include = FALSE}
+Teams %>%
+  filter(yearID > 1969) %>%
+  group_by(yearID) %>%
+  summarize(CG.frac = sum(CG)/sum(G)) -> complete.games
+
+complete.games %>%
+  ggplot(aes(x = yearID,y = CG.frac)) +
+  geom_point()
+```
+
+Does the trend differ between the American and National Leagues? 
+
+\vspace{0.5in}
+
+```{r, include=FALSE}
+Teams %>%
+  filter(yearID > 1969) %>%
+  group_by(yearID,lgID) %>%
+  summarize(CG.frac = sum(CG)/sum(G),) -> complete.games.lg
+
+complete.games.lg %>%
+  ggplot(aes(x = yearID,
+             y = CG.frac,
+             color = lgID)) +
+  geom_point()
+```
+
+### Batters Faced
+
+```{r}
+Pitching %>%
+  filter(yearID > 1969) %>%
+  group_by()
+```
+
+
+
