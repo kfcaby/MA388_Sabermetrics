@@ -84,11 +84,51 @@ complete.games.lg %>%
 
 ### Batters Faced
 
-```{r}
+We might also want to look at the typical number of batters a pitcher faces. For each season from 1970 to 2018, calculate the average number of batters faced per game (hint: Pitching database).  Discuss two interesting results. 
+
+\vspace{2in}
+
+```{r, include = FALSE}
 Pitching %>%
   filter(yearID > 1969) %>%
-  group_by()
+  group_by(yearID) %>%
+  summarize(BFP.game = sum(BFP)/sum(G)) -> BFP
+
+BFP %>%
+  ggplot(aes(x = yearID, y = BFP.game)) +
+  geom_point()
 ```
 
+Ideally, we would want to perform the analysis in the last question separately for relief and starting pitchers.  However, the Pitching database does not identify pitchers as starters or relievers.  Propose a way to identify starting pitchers in the Pitching database.  
+
+\vspace{1in}
+
+```{r, include = FALSE}
+#I'm going to call players who had at least ten starts "Starters"
+
+Pitching %>%
+  filter(yearID > 1969) %>%
+  group_by(yearID,playerID) %>%
+  summarize(BFP = sum(BFP),
+            G = sum(G),
+            GS = sum(GS)) -> Pitching.type
+
+Pitching.type %>%
+  mutate(type = ifelse(GS > 9, "Starter", "Reliever")) -> Pitching.type
+
+Pitching.type %>%
+  filter(BFP > 100) %>%
+  group_by(yearID, type) %>%
+  summarize(BFP.game = sum(BFP)/sum(G)) -> BFP.type
+```
+
+
+Using your method, identify pitchers as relievers or starters and repeat your `batter's faced' analysis seperately for relievers and starters.
+
+```{r, include = FALSE}
+BFP.type %>%
+  ggplot(aes(x = yearID, y = BFP.game, color = type)) +
+  geom_point()
+```
 
 
