@@ -1,0 +1,57 @@
+---
+title: "Untitled"
+author: "Kevin Cummiskey"
+date: "January 17, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+```{r, message = FALSE, warning = FALSE, fig.height= 2}
+library(tidyverse)
+library(Lahman)
+
+# number of wins by season per team
+Teams %>%
+  filter(yearID == 2018) %>%
+  ggplot(aes(x = lgID, y = W)) +
+  geom_boxplot()
+
+# let's look at Homeruns vs Wins
+Teams %>%
+  filter(yearID == 2018) %>%
+  ggplot(aes(x = HR, 
+             y = W, 
+             color = lgID)) +
+  geom_point() + 
+  labs(x = "Home Runs",
+       y = "Wins",
+       title = "Wins versus Home Runs by league")
+```
+
+
+```{r}
+#Answer to fraction of complete games
+complete.games = Teams %>% 
+  filter(yearID > 1969) %>%
+  group_by(yearID, lgID) %>%
+  summarize(CG.frac = sum(CG)/sum(G))
+
+complete.games %>%
+  ggplot(aes(x = yearID, y = CG.frac, color = lgID)) +
+  geom_point() +
+  labs(x = "Year", y = "Fraction complete games",
+       title = "Fraction of complete games by year")
+```
+
+
+
+
+
+
