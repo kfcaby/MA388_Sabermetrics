@@ -36,6 +36,7 @@ get_starting_pitchers <- function(d,n.starters,GS.min = 10){
     filter(GS >= GS.min) %>%
     arrange(desc(GS)) %>%
     head(n.starters)
+  steve
   return(d)
 }
 ```

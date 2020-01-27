@@ -1,0 +1,50 @@
+---
+title: "Getting Multiple Years of Retrosheet Game Logs"
+author: "Kevin Cummiskey"
+date: "January 27, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Obtaining Retrosheet Game Logs
+
+In the Chapter 4 exercises, you will have to obtain multiple years of retrosheet game logs.  Here are some instructions to help you.
+
+1. Get the game log headers from the author's github.
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+
+urlRemote = "https://raw.githubusercontent.com/"
+pathGithub = "maxtoki/baseball_R/master/data/"
+fileName = "game_log_header.csv"
+game_log_headers <- read_csv(file = paste0(urlRemote,pathGithub,fileName)) 
+```
+
+2. Go to \url{https://www.retrosheet.org/gamelogs/index.html} and download the years you want.  You can also get an entire decades as well.
+
+3. Find the .zip file you downloaded and unzip it.  Delete the .zip file.
+
+4. Get the file names to upload.
+
+```{r}
+# this is the path of the folder where you downloaded the game logs.
+my_path = "C:/Users/kevin.cummiskey/Documents/MA388_GameLogs/"
+files = list.files(path = my_path)
+files = paste(my_path,files, sep = "")
+files
+```
+
+5. Read in the game logs and combine into one data frame.
+
+```{r, message = FALSE, warning=FALSE}
+#read in data
+game_logs = files %>%
+  map(read_csv,
+      col_names = names(game_log_headers),
+      na = character()) %>%
+  reduce(rbind)
+```
