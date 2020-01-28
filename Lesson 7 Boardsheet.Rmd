@@ -1,0 +1,139 @@
+---
+title: "The Relation Between Runs and Wins"
+author: "Kevin Cummiskey"
+date: "January 28, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In 2002, the general manager of the Oakland Athletics, Billy Beane, set out to make the team playoff contenders on a limited budget.  He relied extensively on quantative analysis and sabermetrics. Specifically, he wanted to find undervalued players who were effective at producing runs. At the time, teams used mostly traditional statistics like batting average (BA), home runs (HR), and runs batted in (RBI) to value players. However, evidence from sabermetrics suggested there are better statistics for determining players' contributions to run scoring, resulting in many players being undervalued.  The book \textit{Moneyball} by Michael Lewis and the film by the same name follow the 2002 Oakland A's.
+
+Put yourself in the position of Billy Beane.  How would you approach this problem?
+
+\vspace{2in}
+
+
+## How many wins to make the playoffs?
+
+Let's see historically how many wins it takes to make the playoffs. Below, we will look at the five seasons (1997-2001) preceeding the 2002 season. First, we need to do add a variable \texttt{playoff} to the Teams database which is an indicator of whether the team made the playoffs (1) or did not make the playoffs (2).  
+
+```{r}
+library(Lahman)
+library(tidyverse)
+library(ggrepel)
+
+#subset to get my teams
+my_teams <- Teams %>% 
+  filter(yearID >= 1997, yearID <= 2001)
+
+#determine which teams made the playoffs each year
+#Use the SeriesPost data
+my_series <- SeriesPost %>% 
+  filter(yearID >= 1997, yearID <= 2001)%>%
+  select(yearID, teamIDwinner, teamIDloser) %>%
+  gather(key = "result", value = "teamID", -yearID) %>%
+  select(-result) %>%
+  mutate(playoffs = 1) %>%
+  unique()
+
+#Merge with my_teams, replace NA, and change
+#playoff to a factor variable
+my_teams = my_teams %>% 
+  left_join(my_series, by = c("yearID", "teamID")) %>%
+  replace_na(list(playoffs = 0)) %>%
+  mutate(playoffs = playoffs)
+
+#let's check if we did this correctly  
+my_teams %>%
+  group_by(yearID) %>%
+  summarize(teams.playoffs = sum(playoffs))
+```
+
+Next, let's look at the data.
+
+```{r, fig.height = 3}
+my_teams %>%
+  ggplot(aes(x = W, y = R, color = factor(playoffs))) +
+  geom_point() +
+  labs(x = "Wins", y = "Runs Scored", color = "Made Playoffs",
+       title = "Wins and Making the Playoffs") +
+  geom_text_repel(data = filter(my_teams, teamID == "OAK"),
+                  aes(x = W, y = R,label = paste(teamID,yearID)))
+```
+
+Based on the figure above, if you were Billy Beane, how many wins should you shoot for in order to have a good chance of making the playoffs?
+
+\vspace{1in}
+
+In the previous problem, you came up with a number of wins by inspecting the figure.  What other methods have you learned that you could use?
+
+\vspace{2in}
+
+## Run differential and wins
+
+Now that we have a goal for the number of wins for our season, we will look at how much we have to outscore our opponents over the course of a season to achieve that number of wins.  Towards this end, we will calculate the run differential and use linear regression.
+
+```{r, fig.height = 3}
+#calculate the run differential
+my_teams = my_teams %>%
+  mutate(RD = R - RA)
+
+my_teams %>% 
+  ggplot(aes(x= RD,y = W, color = factor(playoffs))) +
+  geom_point() +
+  geom_text_repel(data = filter(my_teams, W > 110 | W < 60),
+                  aes(label = paste(teamID,yearID))) 
+```
+
+What run differential would you recommend to feel confident of getting the number of wins you want?
+
+\vspace{0.5in}
+
+Let's look further at the relationship between run difference and wins with linear regression.
+
+```{r}
+#fit a linear regression model
+lin.fit = lm(W ~ RD, data = my_teams)
+summary(lin.fit)
+```
+
+Calculate the run differential that would typically result in \underline{one} additional win.
+
+\vspace{0.5in}
+
+Based on the regression model, do you feel confident in your recommended run differential? Explain how you decided.
+
+\vspace{0.5in}
+
+Let's look at the residuals for this regression.  The \texttt{broom} package helps get model results.
+
+```{r, fig.height=3, message = FALSE}
+library(broom)
+
+my_teams = augment(lin.fit, data = my_teams)
+
+my_teams %>%
+  ggplot(aes(x = W, y = .resid, color = factor(playoffs))) +
+  geom_point() +
+  geom_text_repel(data = filter(my_teams, abs(.resid) > 7.5),
+                  aes(label = paste(teamID,yearID)))
+```
+
+What units are the residuals in?
+
+What do the residuals tell us about our model?
+
+\vspace{1in}
+
+Above, we used run differential to predict number of wins.  Typically, we use win percentage instead of wins.  Why?
+
+\vspace{0.25in}
+
+Repeat the above analysis using win percentage instead of wins.  Report the run differential that typically results in one additional win.
+
+
