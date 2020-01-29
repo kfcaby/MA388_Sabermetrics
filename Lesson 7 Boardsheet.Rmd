@@ -11,23 +11,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-In 2002, the general manager of the Oakland Athletics, Billy Beane, set out to make the team playoff contenders on a limited budget.  He relied extensively on quantative analysis and sabermetrics. Specifically, he wanted to find undervalued players who were effective at producing runs. At the time, teams used mostly traditional statistics like batting average (BA), home runs (HR), and runs batted in (RBI) to value players. However, evidence from sabermetrics suggested there are better statistics for determining players' contributions to run scoring, resulting in many players being undervalued.  The book \textit{Moneyball} by Michael Lewis and the film by the same name follow the 2002 Oakland A's.
+In 2002, the Oakland Athletics were losing three star players (Johnny Damon, Jason Giambi, and Jason Isringhausen) to free agency.  Their general manager, Billy Beane, had a limited budget to work with. He wanted to find players who were effective at producing runs but were undervalued in the market. At the time, teams used mostly traditional statistics like batting average (BA), home runs (HR), and runs batted in (RBI) to value players. However, evidence from sabermetrics suggested there are better statistics for determining players' contributions to run scoring.  The book \textit{Moneyball} by Michael Lewis and the film by the same name follow the 2002 Oakland A's.
 
 Put yourself in the position of Billy Beane.  How would you approach this problem?
 
-\vspace{2in}
+\vspace{1.5in}
 
 
 ## How many wins to make the playoffs?
 
 Let's see historically how many wins it takes to make the playoffs. Below, we will look at the five seasons (1997-2001) preceeding the 2002 season. First, we need to do add a variable \texttt{playoff} to the Teams database which is an indicator of whether the team made the playoffs (1) or did not make the playoffs (2).  
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
 library(Lahman)
 library(tidyverse)
 library(ggrepel)
 
-#subset to get my teams
+#get teams in the 1997-2001 season
 my_teams <- Teams %>% 
   filter(yearID >= 1997, yearID <= 2001)
 
@@ -41,14 +41,13 @@ my_series <- SeriesPost %>%
   mutate(playoffs = 1) %>%
   unique()
 
-#Merge with my_teams, replace NA, and change
-#playoff to a factor variable
+#Merge with my_teams and replace NAs
 my_teams = my_teams %>% 
   left_join(my_series, by = c("yearID", "teamID")) %>%
-  replace_na(list(playoffs = 0)) %>%
-  mutate(playoffs = playoffs)
+  replace_na(list(playoffs = 0)) 
 
 #let's check if we did this correctly  
+# there should be eight playoff teams each year
 my_teams %>%
   group_by(yearID) %>%
   summarize(teams.playoffs = sum(playoffs))
@@ -56,7 +55,7 @@ my_teams %>%
 
 Next, let's look at the data.
 
-```{r, fig.height = 3}
+```{r, fig.height = 3.5}
 my_teams %>%
   ggplot(aes(x = W, y = R, color = factor(playoffs))) +
   geom_point() +
@@ -70,9 +69,9 @@ Based on the figure above, if you were Billy Beane, how many wins should you sho
 
 \vspace{1in}
 
-In the previous problem, you came up with a number of wins by inspecting the figure.  What other methods have you learned that you could use?
+In the previous question, you came up with a number of wins by inspecting the figure.  What other methods have you learned that you could use?
 
-\vspace{2in}
+\vspace{1in}
 
 ## Run differential and wins
 
@@ -87,7 +86,9 @@ my_teams %>%
   ggplot(aes(x= RD,y = W, color = factor(playoffs))) +
   geom_point() +
   geom_text_repel(data = filter(my_teams, W > 110 | W < 60),
-                  aes(label = paste(teamID,yearID))) 
+                  aes(label = paste(teamID,yearID))) +
+  labs(x = "Run Differential", y = "Wins",
+       color = "Made playoffs")
 ```
 
 What run differential would you recommend to feel confident of getting the number of wins you want?
@@ -136,4 +137,27 @@ Above, we used run differential to predict number of wins.  Typically, we use wi
 
 Repeat the above analysis using win percentage instead of wins.  Report the run differential that typically results in one additional win.
 
+\vspace{1in}
+
+How should we proceed next with this analysis?
+
+
+```{r, include = FALSE}
+my_teams %>% 
+  ggplot(aes(x = H/AB, y = R)) +
+  geom_point()
+
+my_teams = my_teams %>%
+  mutate(HR.std = scale(HR),
+         AVG.std = scale(H/AB))
+runs.model = lm(R ~ HR.std + AVG.std, data = my_teams)
+summary(runs.model)
+
+my_teams = my_teams %>%
+  mutate(OBP = (H + BB + HBP)/(AB + BB + HBP),
+         OBP.std = scale(OBP))
+
+runs.model2 = lm(R ~ HR.std + OBP.std, data = my_teams)
+summary(runs.model2)
+```
 
