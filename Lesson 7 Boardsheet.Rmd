@@ -20,7 +20,7 @@ Put yourself in the position of Billy Beane.  How would you approach this proble
 
 ## How many wins to make the playoffs?
 
-Let's see historically how many wins it takes to make the playoffs. Below, we will look at the five seasons (1997-2001) preceeding the 2002 season. First, we need to do add a variable \texttt{playoff} to the Teams database which is an indicator of whether the team made the playoffs (1) or did not make the playoffs (2).  
+Let's see historically how many wins it takes to make the playoffs. Below, we will look at the five seasons (1997-2001) preceeding the 2002 season. First, we need to add a variable \texttt{playoff} to the Teams database which is an indicator of whether the team made the playoffs (1) or did not make the playoffs (2).  
 
 ```{r, message = FALSE, warning = FALSE}
 library(Lahman)
@@ -95,7 +95,17 @@ What run differential would you recommend to feel confident of getting the numbe
 
 \vspace{0.5in}
 
-Let's look further at the relationship between run difference and wins with linear regression.
+Let's look further at the relationship between run difference and wins with linear regression. Here is the model we will fit:
+
+\[Wins_i = \beta_0 + \beta_1 RD_i + \epsilon_i \quad \epsilon_i \sim \text{Normal}(0,\sigma^2)\]
+
+where $Wins_i$ and $RD_i$ are the wins and run differential for team $i$.  
+
+Interpret the coefficients in this model.
+
+\vspace{1in}
+
+
 
 ```{r}
 #fit a linear regression model
@@ -113,7 +123,7 @@ Based on the regression model, do you feel confident in your recommended run dif
 
 Let's look at the residuals for this regression.  The \texttt{broom} package helps get model results.
 
-```{r, fig.height=3, message = FALSE}
+```{r, fig.height=3, message = FALSE, warning = FALSE}
 library(broom)
 
 my_teams = augment(lin.fit, data = my_teams)
