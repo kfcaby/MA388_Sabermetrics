@@ -1,0 +1,61 @@
+---
+title: "Lesson 10 k Fold Cross-Validation"
+author: "Kevin Cummiskey"
+date: "February 3, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Review
+
+Last lesson, we discussed three models to predicts the number of wins in a season.
+
+\begin{align}
+Wpct &= \beta_0 + \beta_1 RD + \epsilon \\
+Wpct &= \frac{R^2}{R^2 + RA^2} + \epsilon \\
+Wpct &= \frac{R^k}{R^k + RA^k} + \epsilon
+\end{align}
+where $Wpct$ is Win Percentage, $R$ is Runs Scored, $RA$ is Runs Allowed, and $\epsilon$ is the random error. Recall that we fit Model 1 to the 1997-2001 seasons.
+
+When prediction is the goal of a statistical model, \textit{overfitting} the model is a big concern.  What is \textit{overfitting}?
+
+\vspace{0.5in}
+
+## $k$-fold cross validation
+
+$k$-fold cross validation is one method to assess how well a model will predict on new data.  In this method, we randomly partition the data into $k$ groups.  We set one group (called the \textit{test set}) aside, fit the model on the remaining data (the \textit{training set}), and assess the performance on the test set.  We repeat the process $k$ times with each partition as the test set.
+
+Here is a summary of the steps:
+
+1. Randomly partition the data set into $k$ groups.
+2. Set one partition (the test set) aside.
+3. Fit the model on the remaining data (the training set).
+4. Calculate RMSE.
+5. Repeat with each partition as the test set.
+
+The average RMSE of the $k$-folds is a better measure of the model performance.
+
+
+Let's look at Model 1 using 5-fold cross validation.  
+
+```{r, warning=FALSE, message = FALSE}
+library(tidyverse)
+library(Lahman)
+
+#get the data
+my_teams = Teams %>%
+  filter(yearID >= 1997, yearID <= 2001) %>%
+  mutate(RD = R - RA,
+         Wpct = W/(W + L))
+
+#partition the data into five groups
+my_teams %>% crossv_kfold(k = 5)
+
+```
+
+
+
+

@@ -18,9 +18,9 @@ Wpct &= \beta_0 + \beta_1 RD + \epsilon \\
 Wpct &= \frac{R^2}{R^2 + RA^2} + \epsilon \\
 Wpct &= \frac{R^k}{R^k + RA^k} + \epsilon
 \end{align}
-where $Wpct$ is Win Percentage, $R$ is Runs Scored, $RA$ is Runs Allowed, and $\epsilon$ is the random error. Recall that we fit Model 1 on the 1997-2001 seasons.
+where $Wpct$ is Win Percentage, $R$ is Runs Scored, $RA$ is Runs Allowed, and $\epsilon$ is the random error. Recall that we fit Model 1 to the 1997-2001 seasons.
 
-Briefly discuss the strengths/limitations of these models. \vspace{1in}
+Briefly discuss the strengths/limitations of each model. \vspace{1in}
 
 How would you assess which model is the best?  Please be specific. \vspace{1in}
 
@@ -58,7 +58,7 @@ my_teams = Teams %>%
 
 Next, let's compare graphically the predictions from Model 1 and 2.
 
-```{r, fig.height = 3}
+```{r, fig.height = 3, warning = FALSE}
 library(broom)
 
 #get Model 1 predicted win percentages
@@ -75,7 +75,7 @@ my_teams %>%
        title = "Predicted Win Percentage - Model 1 and 2 (1997-2001)")
 ```
 
-Briefly discuss interesting how the models differ. \vspace{0.5in}
+Briefly discuss how the models differ. \vspace{0.5in}
 
 Next, let's compare the root mean square error (RMSE). Write an equation for the RMSE. \vspace{0.5in}
 
@@ -100,11 +100,11 @@ Next, let's take a look at the residuals from Model 2.
 ```{r, fig.height=3}
 # let's look at min, max, 1Q, 3Q, median residual
 my_teams %>%
-  summarise(min(.resid.pyt2),
-            quantile(.resid.pyt2, 0.25),
-            median(.resid.pyt2),
-            quantile(.resid.pyt2, 0.75),
-            max(.resid.pyt2))
+  summarise(min = min(.resid.pyt2),
+            Q1 = quantile(.resid.pyt2, 0.25),
+            median = median(.resid.pyt2),
+            Q3 = quantile(.resid.pyt2, 0.75),
+            max = max(.resid.pyt2))
 
 my_teams %>%
   ggplot(aes(x = Wpct,
@@ -147,11 +147,11 @@ sqrt(mean(my_teams$.resid.pyt_k^2))
 
 ```{r, fig.height = 3}
 my_teams %>%
-  summarise(min(.resid.pyt_k),
-            quantile(.resid.pyt_k, 0.25),
-            median(.resid.pyt_k),
-            quantile(.resid.pyt_k, 0.75),
-            max(.resid.pyt_k))
+  summarise(min = min(.resid.pyt_k),
+            Q1 = quantile(.resid.pyt_k, 0.25),
+            median = median(.resid.pyt_k),
+            Q3 = quantile(.resid.pyt_k, 0.75),
+            max = max(.resid.pyt_k))
 
 my_teams %>%
   ggplot(aes(x = Wpct,
@@ -162,6 +162,33 @@ my_teams %>%
 ```
 
 
-#add expand.grid code here
+## How many runs for a win (pg 106)
+
+Previously, we learned about the ``10-to-1'' rule of thumb (number of required runs scored for one additional win) using Model 1.  Using Model 2, this quantity changes based on runs allowed.  How can we find an expression for the number of required runs scored for one additional win?
+
+\vspace{1in}
+
+Let's explore this for various combinations of runs scored and runs allowed. (\textit{Note $R$ and $RA$ below are runs scored per game and runs allowed per game.})
+
+```{r}
+#function to compute incremental runs per win
+IR <- function(R = 5, RA = 5){
+  (R^2 + RA^2)^2 /(2*R*RA^2)
+}
+
+ir_table <- expand.grid(R = seq(3,6,0.5),
+                        RA = seq(3,6,0.5))
+
+ir_table %>% 
+  mutate(IRW = IR(R,RA)) %>%
+  spread(key = RA, value = IRW, sep = "=") %>%
+  round(1)
+```
+
+How do the results of Model 2 compare to Model 1 in terms of incremental runs per win?
+
+
+
+
 
 
