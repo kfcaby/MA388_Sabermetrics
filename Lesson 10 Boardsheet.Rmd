@@ -1,5 +1,5 @@
 ---
-title: "Lesson 10 k Fold Cross-Validation"
+title: "Lesson 10 $k$-fold Cross-Validation"
 author: "Kevin Cummiskey"
 date: "February 3, 2020"
 output: pdf_document
@@ -20,7 +20,7 @@ Wpct &= \frac{R^k}{R^k + RA^k} + \epsilon
 \end{align}
 where $Wpct$ is Win Percentage, $R$ is Runs Scored, $RA$ is Runs Allowed, and $\epsilon$ is the random error. Recall that we fit Model 1 to the 1997-2001 seasons.
 
-When prediction is the goal of a statistical model, \textit{overfitting} the model is a big concern.  What is \textit{overfitting}?
+When prediction is the goal of a statistical model, \textit{overfitting} a model is a big concern.  What is \textit{overfitting}?
 
 \vspace{0.5in}
 
@@ -52,9 +52,62 @@ my_teams = Teams %>%
          Wpct = W/(W + L))
 
 #partition the data into five groups
-my_teams %>% crossv_kfold(k = 5)
+set.seed(100)
+partition = rep(1:5, length.out = 148)
+partition = sample(partition, replace = TRUE)
+my_teams$partition = partition
 
+# create empty vector to save RMSE for each fold
+rmse = c()
+
+# perform cross validation
+for(i in 1:5){
+  # test set
+  test_teams = my_teams %>% 
+    filter(partition == i)
+  
+  #training set
+  train_teams = my_teams %>%
+    filter(partition != i)
+
+  #fit model
+  lin.fit.train = lm(Wpct ~ RD, data = train_teams)
+    
+  #get predictions and residuals on test set
+  test_teams = test_teams %>%
+    mutate(Wpct.pred = coef(lin.fit.train)[1] + coef(lin.fit.train)[2]*RD,
+           .resid = Wpct - Wpct.pred)
+  
+  #calculate RMSE
+  
+  rmse[i] = sqrt(mean(test_teams$.resid^2))
+}
 ```
+
+Let's look at the RMSE for each fold and the average RMSE.
+
+```{r}
+round(rmse,4)
+round(mean(rmse),4)
+```
+
+It would also be helpful to look at this in terms of number of wins.
+
+```{r}
+round(162*rmse,1)
+round(162*mean(rmse),1)
+```
+
+What do we conclude from this analysis? \vspace{0.5in}
+
+
+Using the code above as a guide, perform a 5-fold cross validation of the Pythagorean formula with exponent $k$. Report your results and conclusions below.
+
+\vspace{2in}
+
+
+
+
 
 
 
