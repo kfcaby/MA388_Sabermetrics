@@ -20,7 +20,7 @@ Wpct &= \frac{R^k}{R^k + RA^k} + \epsilon
 \end{align}
 where $Wpct$ is Win Percentage, $R$ is Runs Scored, $RA$ is Runs Allowed, and $\epsilon$ is the random error. Recall that we fit Model 1 to the 1997-2001 seasons.
 
-When prediction is the goal of a statistical model, \textit{overfitting} a model is a big concern.  What is \textit{overfitting}?
+When prediction is the goal of a statistical model, \textit{overfitting} a model to the data is a big concern.  What is \textit{overfitting}?
 
 \vspace{0.5in}
 
@@ -91,12 +91,6 @@ round(rmse,4)
 round(mean(rmse),4)
 ```
 
-It would also be helpful to look at this in terms of number of wins.
-
-```{r}
-round(162*rmse,1)
-round(162*mean(rmse),1)
-```
 
 What do we conclude from this analysis? \vspace{0.5in}
 
