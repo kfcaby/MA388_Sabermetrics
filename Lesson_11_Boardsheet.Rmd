@@ -31,6 +31,8 @@ fields <- read_csv(file = paste(path, file, sep=""))
 
 #I recommend cadets download this file to their computers
 #it's too big to keep getting from github
+# https://raw.githubusercontent.com/kfcaby/MA388_Sabermetrics/master/data/all2016.csv
+
 data2016 <- read_csv(file = "./data/all2016.csv",
                      col_names = pull(fields, Header),
                      na = character())
