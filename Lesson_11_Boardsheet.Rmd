@@ -11,15 +11,36 @@ output: pdf_document
 
 An important concept in sabermetrics is the \textit{run expectancy matrix}. For each combination of base runners and outs, it tells us the average number of runs scored in the remainder of the inning. Here is a run expectancy table for 2010-2015.
 
-![Run Expectancy Matrix 2010-2015 (source: http://tangotiger.net/re24.html)](run_expectancy.png){#id .class width=2in}
+```{r, fig.height=1,echo=FALSE}
+library(knitr)
+include_graphics("run_expectancy.png")
+```
+
+What does the run expectancy matrix suggest about the following?
+
+(1) bunting with no outs and a runner on first.
+
+&nbsp;
+
+(2) intentionally walking a batter with runners on second and third with one out.
+
+&nbsp;
+
+(3) making the first or third out at third base.
+
+&nbsp;
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Note: the R code below is copied from "Analyzing Baseball Data with R" by Marchi, Albert, Baumer.
+\newpage
 
-## Get the retrosheet play-by-play data
+## Create a run expectancy matrix from retrosheet play-by-play data
+
+The following code is from Chapter 5 of "Analyzing Baseball Data with R" by Marchi, Albert, Baumer.
+
+### Get the retrosheet play-by-play data
 
 ```{r, message = FALSE, warning = FALSE}
 library(tidyverse)
@@ -38,7 +59,7 @@ data2016 <- read_csv(file = "./data/all2016.csv",
                      na = character())
 ```
 
-## Runs Scored in the Remainder of the Inning
+### Runs Scored in the Remainder of the Inning
 
 ```{r}
 #create some new variables
@@ -69,7 +90,7 @@ data2016 %>%
 
 
 
-## Create the Run Expectancy Matrix
+### Create the Run Expectancy Matrix
 
 ```{r}
 #create a new variable for the current state
@@ -119,7 +140,9 @@ rownames(RUNS_out) = c("000","001","010","011",
                        "100","101","110", "111")
 ```
 
-## Print Run Expectency Matrix as a table
+\newpage
+
+### Print Run Expectency Matrix as a table
 
 ```{r}
 library(knitr)
@@ -127,3 +150,29 @@ library(knitr)
 kable(RUNS_out)
 
 ```
+
+### Try It
+
+Copy the code above to get the run expectancy matrix.
+
+## Using Git
+
+Instead of cutting and pasting the previous code, I highly recommend cloning my git repository to your computer.
+
+1. Download and install git (\url{https://git-scm.com/downloads}).
+
+2. Open Windows Powershell.
+
+3. Navigate to a directory where you want the files to go. Use the \texttt{ls} and \texttt{cd} commands.
+
+4. Clone the git repository.
+
+git clone https://github.com/kfcaby/MA388_Sabermetrics.git .
+
+5. Go into RStudio and open the R Project. You're ready to go!
+
+If I make changes, you can update the repository later using:
+
+\texttt{git pull origin master}
+
+I recommend you use another directory for your files so they don't get overwritten.
