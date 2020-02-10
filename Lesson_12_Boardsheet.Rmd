@@ -1,0 +1,50 @@
+---
+title: "Lesson_12_Boardsheet"
+author: "Kevin Cummiskey"
+date: "2/7/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Run Value
+
+```{r}
+library(tidyverse)
+library(Lahman)
+
+# load data2016 (as of page 115 in text) and RUNS (page 115 in text) 
+data2016 <- read_csv(file = "./data/data2016.csv")
+RUNS <- read_csv(file = "./data/expectedRUNs2016.csv")
+
+# add run value of the play (page 116)
+data2016 %>% 
+  left_join(select(RUNS, -Outs), by = "STATE") %>%
+  rename(Runs.State = Mean) %>% 
+  left_join(select(RUNS, -Outs),
+            by = c("NEW.STATE" = "STATE")) %>% 
+  rename(Runs.New.State = Mean) %>% 
+  replace_na(list(Runs.New.State = 0)) %>% 
+  mutate(run_value = Runs.New.State - Runs.State + 
+           RUNS.SCORED) -> data2016
+```
+
+Let's look at Jose Altuve (page 117).
+
+```{r}
+#get Altuve's playerID
+Master %>%
+  filter(nameFirst == "Jose", nameLast == "Altuve") %>% 
+  pull(retroID) -> altuve.id
+
+data2016 %>% 
+  filter(BAT_ID == altuve.id,
+         BAT_EVENT_FL == TRUE) -> altuve
+
+altuve %>% 
+  select(STATE, NEW.STATE, run_value) %>%
+  slice(1:3)
+```
+
