@@ -56,7 +56,7 @@ kable(results)
 3. Calculate the odds ratio and log odds ratio for a called strike comparing left and right handed hitters.
 
 &nbsp;
-
+git 
 \textbf{Note, we could also get the same results using the following model:}
 
 \[\text{Strike}_i \sim \text{Bernoulli}(p_i)\]
@@ -168,9 +168,9 @@ tile_plot <- k_zone_plot %+% grid_hats +
 tile_plot
 ```
 
-### Adjusting for batter handedness
+### Adjusting for pitch location
 
-We may suspect whether the batter is left-handed or right-handed (variable: \texttt{stand}) is important in determing whether a pitch is called a strike.
+Now, we can reconsider our question of called strikes for righties and lefties after adjusting for pitch location.
 
 Let's fit a model that includes \texttt{stand}.
 
