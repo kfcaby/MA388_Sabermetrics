@@ -1,0 +1,245 @@
+---
+title: "Lesson 15 Boardsheet"
+author: "Kevin Cummiskey"
+date: "2/19/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.height = 3)
+```
+
+## Question: Do umpires call more strikes on left-handed or right-handed hitter?
+
+### Compare unadjusted strike probabilities 
+
+Below, we will look at 120,000 pitches throw in May 2016.
+
+```{r, message = FALSE, warning= FALSE}
+library(tidyverse)
+library(knitr)
+
+#Run this code once
+#library(mlbgameday)
+#gamedat <- get_payload(start = "2016-05-01", end = "2016-05-31")
+#pitches <- inner_join(gamedat$pitch, gamedat$atbat, 
+#                      by = c("num","url"))
+#recommend writing to someplace on your harddrive
+#pitches %>% write_csv("C:/Users/kevin.cummiskey/Data/pitches.csv")
+
+#Read in the pitches you saved above
+pitches <- read_csv(file = "C:/Users/kevin.cummiskey/Data/pitches.csv")
+
+#we only want balls and called strikes
+#note the types are different that in our text!!
+taken <- pitches %>% 
+  filter(type %in% c("C","B"))
+
+results = taken %>% 
+  group_by(type, stand) %>% 
+  count() %>% 
+  spread(stand, n) 
+
+results$type = c("Ball", "Called Strike")
+
+kable(results)
+```
+
+1. Calculate the probability of a strike for left and right handed batters.
+
+&nbsp;
+
+2. Calculate the odds of strike for left and right handed batters.
+
+&nbsp;
+
+3. Calculate the odds ratio and log odds ratio for a strike comparing left and right handed hitters.
+
+&nbsp;
+
+\textbf{Note, we could also get the same results using the following model:}
+
+\[\text{Strike}_i \sim \text{Bernoulli}(p_i)\]
+\[\log\left(\frac{p_i}{1-p_i}\right) = \beta_0 + \beta_1 Stand_i\]
+
+where $Stand_i$ is whether batter $i$ is left or right handed.
+
+```{r, message = FALSE}
+library(mgcv)
+
+#fit the model above
+model_stand <- gam(type == "C" ~ stand, family = binomial, data = taken)
+summary(model_stand)
+```
+
+Using the model results, calculate the probability of a strike for a right-handed hitter.
+
+&nbsp;
+
+If the goal of your analysis is to see whether umpires are more likely to call \textit{similar} pitches strikes on righties than lefties, how could we improve upon our analysis above?
+
+&nbsp;
+
+## Adjusting for pitch location
+
+Let's look at the pitch locations.  
+
+```{r, message = FALSE, warning= FALSE}
+#if there is code you use a lot, you can put it in a separate file and 
+#source it.  The file kzoneplot contains the code on page 165 for creating
+# the strike zone
+source("kzoneplot.R")
+
+k_zone_plot %+% sample_n(taken, 10000) +
+  aes(color = type) + 
+  geom_point(alpha = 0.1) +
+  scale_color_manual(values = c("blue", "black"))
+```
+
+
+### Generalized Additive Models
+
+Last lesson, we discussed models for the probability of a called strike based on the location of the pitch when it crosses the plate.  
+
+1. Discuss two limitations of using a linear regression model in this situation.
+
+&nbsp;
+
+2. Linear regression is fundamentally flawed as a model for location and strike probability because pitches near the middle of the strike zone are nearly always called strikes and pitches far away from the strike zone are nearly always called balls.  A one inch difference in the middle of the plate is not as important as a one inch difference on the corner of the plate.  Therefore, we want to consider more general models of the form:
+
+\[\text{Strike}_i \sim \text{Bernoulli}(p_i)\]
+\[\log\left(\frac{p_i}{1-p_i}\right) = \beta_0 + f(px_i,pz_i) \]
+
+In R, the \texttt{gam} function of the \texttt{mgcv} package will fit thin plate regression splines for $f(px,py)$.  Deriving how to fit these splines by hand is outside the scope of this course.  However, you should understand they represent a flexible way of modeling nonlinear relationships. In future analyses, we will use these models to adjust for pitch location when assessing the relationship between other variables (count, catcher, etc) and called strikes.  For more information on thin plate regression splines, see \url{https://www.mailman.columbia.edu/research/population-health-methods/thin-plate-spline-regression}.
+
+
+### Fit the model
+
+Let's fit model above to this data.
+
+```{r, message = FALSE}
+library(mgcv)
+strike_mod <- gam(type == "C" ~ s(px, pz),
+                  family = binomial,
+                  data = taken)
+```
+
+How can we use this model?
+
+&nbsp;
+
+First, let's look at predicted probabilities of some pitches.
+
+```{r}
+# a pitch right down the middle
+predict(strike_mod, 
+        newdata = data.frame(px = 0, pz = 2.5),
+        type = "response")
+
+# a pitch on the inside corner for a right-handed batter
+predict(strike_mod, 
+        newdata = data.frame(px = -1, pz = 2.5),
+        type = "response")
+
+# a pitch on the outside corner for a right-handed batter
+predict(strike_mod, 
+        newdata = data.frame(px = 1, pz = 2.5),
+        type = "response")
+```
+
+### Visualizing the estimated surface
+
+```{r, message = FALSE, warning= FALSE}
+library(modelr)
+library(broom)
+#create a grid of points in the strike zone
+grid <- taken %>% 
+  data_grid(px = seq_range(px, n = 100),
+            pz = seq_range(pz, n = 100))
+
+#get predicted values from the model on the grid
+grid_hats <- strike_mod %>% 
+  augment(type.predict = "response", newdata = grid)
+
+#plot the results
+tile_plot <- k_zone_plot %+% grid_hats + 
+  geom_tile(aes(fill = .fitted),alpha = 0.7) + 
+  scale_fill_gradient(low = "gray92", high = "blue")
+tile_plot
+```
+
+### Adjusting for batter handedness
+
+We may suspect whether the batter is left-handed or right-handed (variable: \texttt{stand}) is important in determing whether a pitch is called a strike.
+
+Let's fit a model that includes \texttt{stand}.
+
+\[\text{Strike}_i \sim \text{Bernoulli}(p_i)\]
+\[\log\left(\frac{p_i}{1-p_i}\right) = \beta_0 + f(px_i,pz_i) + \beta_1 stand_i\]
+
+How do we intepret $\beta_1$ in this model?
+
+&nbsp;
+
+```{r}
+hand_mod <- gam(type == "C" ~ s(px,pz) + stand,
+                family = binomial,
+                data = taken)
+summary(hand_mod)
+```
+
+How do we interpret these results?
+
+&nbsp;
+
+Let's look at some pitches.
+
+```{r}
+#LEFT CORNER STRIKE
+#right-handed batter
+predict(hand_mod, 
+        newdata = data.frame(px = -1, pz = 2.5, stand = "R"),
+        type = "response")
+#left-handed batter
+predict(hand_mod, 
+        newdata = data.frame(px = -1, pz = 2.5, stand = "L"),
+        type = "response")
+
+#RIGHT CORNER STRIKE
+#right-handed batter
+predict(hand_mod, 
+        newdata = data.frame(px = 1, pz = 2.5, stand = "R"),
+        type = "response")
+#left-handed batter
+predict(hand_mod, 
+        newdata = data.frame(px = 1, pz = 2.5, stand = "L"),
+        type = "response")
+```
+
+Let's visualize the results.
+
+```{r}
+#create a grid of points
+hand_grid <- taken %>% 
+  data_grid(px = seq_range(px, n = 100),
+            pz = seq_range(pz, n = 100),
+            stand)
+#get model predictions on the grid
+hand_grid_hats <- hand_mod %>% 
+  augment(type.predict = "response",
+          newdata = hand_grid)
+#plot predictions by handedness
+tile_plot %+% hand_grid_hats +
+  facet_grid(. ~ stand)
+```
+
+Let's see where the predictions differ the most.
+
+```{r}
+#this code calculates the difference in predictions for 
+#left and right handed hitters at the same pitch location
+diffs <- hand_grid_hats %>% 
+  group_by(px,pz) %>% 
+  summarize(N = n(), .fitted = diff(.fitted))
+tile_plot %+% diffs
+```
