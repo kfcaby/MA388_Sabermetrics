@@ -242,4 +242,20 @@ diffs <- hand_grid_hats %>%
   group_by(px,pz) %>% 
   summarize(N = n(), .fitted = diff(.fitted))
 tile_plot %+% diffs
+
+Batting %>% 
+  filter(playerID == "eatonad02", yearID == 2016) %>%
+  mutate(AVG = H / AB) %>%
+  mutate(BAT_ID = "eatoa002") %>%
+  select(BAT_ID, AVG)-> eaton_AVG_stats
+
+data2016 %>%
+  filter(BAT_ID == "eatoa002") -> eaton
+
+new_eaton <- inner_join(eaton_AVG_stats, eaton, by = "BAT_ID")
+
+data2016 <- read_csv(file = "data/data2016.csv")
+
+data2016 %>% select(BAT_ID)
+
 ```
