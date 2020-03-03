@@ -1,0 +1,208 @@
+---
+title: "Lesson_19_Boardsheet"
+author: "Kevin Cummiskey"
+date: "3/3/2020"
+output: pdf_document
+---
+
+## Does catchers' framing of pitches affect umpires' ball and strike calls?
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Read in Statcast data using the baseballr package
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(devtools)
+
+#Do this once to install baseballr package
+#devtools::install_github("BillPetti/baseballr")
+
+# load baseballr package
+library(baseballr)
+
+#read in data
+pitches <- scrape_statcast_savant(start_date = "2017-05-01",
+                                  end_date = "2017-05-2")
+#called strikes and balls only
+pitches %>% filter(type %in% c("S","B")) -> taken
+
+#add catcher's name to the taken data.frame
+#get master ID list
+master_id <- read_csv(file = "https://raw.githubusercontent.com/beanumber/baseball_R/master/data/masterid.csv")
+#merge with taken
+taken %>% 
+  left_join(select(master_id,mlb_id,mlb_name),
+            by = c("fielder_2_1" = "mlb_id")) %>% 
+  rename(catcher = mlb_name) -> taken
+
+```
+
+### How much variability is there in called strike probability by catcher?
+
+First, let's see how much variability there is in called strike probabilities by catcher.  Note the catcher's ID is in the \texttt{fielder\_2\_1} variable. 
+
+```{r}
+library(ggrepel)
+
+# count balls and strikes by catcher
+taken %>% 
+  group_by(catcher) %>% 
+  count(type) %>% 
+  pivot_wider(id_cols = catcher, names_from = type, values_from = n) -> catchers
+
+min.pitches = 100
+# filter catchers with less than min.pitches
+catchers %>% filter(S + B >= min.pitches) -> catchers
+
+# calculate called strike probability and odds
+catchers %>% 
+  mutate(strike.prob = S/(S+B)) %>% 
+  arrange(desc(strike.prob))-> catchers
+catchers %>% head(5)
+catchers %>% tail(5)
+```
+
+
+```{r, fig.height = 2, message = FALSE}
+catchers %>% 
+  ggplot(aes(x = strike.prob)) +
+  geom_dotplot() +
+  labs(x = "strike probability",
+       title = "Distribution of called strike probabilities by catcher") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+```
+
+What do these results suggest?
+
+\vspace{1in}
+
+### Effect of catcher - Fixed effects
+
+Thus far in your education, when dealing with regression, you've probably only encountered ``fixed effects".  Here is a fixed effects model we might fit to this data.
+
+\[Strike_i \sim \text{Bernoulli}(p_i)\]
+\[\log\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 catcher_1 + \beta_2 catcher_2 + \cdots + \beta_{m-1} catcher_{m-1}\]
+
+where $catcher_j$ is an indicator (1/0) of whether catcher $j$ is the catcher on pitch $i$.
+
+How many parameters are in this model? \\
+
+What kinds of questions can we answer with this fixed effects model?
+
+\vspace{1in}
+
+Let's fit the model.
+
+```{r}
+model.fixed <- glm(type == "S" ~ as.factor(catcher), 
+                   family = "binomial", 
+                   data = taken)
+summary(model.fixed)
+```
+
+What do we conclude from these results?
+
+\vspace{1in}
+
+### Effect of catcher - random effects
+
+The fixed effect model doesn't directly answer the question we are interested in.  Instead, we can say the catcher effect is itself a random variable.  
+
+\[Strike_i \sim \text{Bernoulli}(p_i)\]
+\[\log\left(\frac{p}{1-p}\right) = \beta_0 + catcher_j\]
+\[catcher_j \sim \text{Normal}(0,\sigma^2)\]
+
+where $catcher_j$ is the random effect of catcher $j$.
+
+How many parameters are in this model? \\
+
+What kinds of questions can we answer with this model? 
+
+\vspace{1in}
+
+Which parameter answers these questions? \\
+
+Let's fit the random effects model.
+
+```{r}
+library(lme4)
+
+model.random <- glmer(type == "S" ~ (1|catcher), 
+                      family = "binomial",
+                      data = taken)
+summary(model.random)
+```
+
+What are the estimates of the model parameters? 
+
+\vspace{0.5in}
+
+What do we conclude from this analysis? 
+
+\vspace{0.5in}
+
+Let's look at the catcher random effects.
+
+```{r, fig.height = 2}
+model.random %>%
+  ranef() %>% 
+  as.tibble() %>% 
+  transmute(id = as.numeric(levels(grp)),
+            effect = condval) -> catcher_effects
+catcher_effects %>% head(5)
+catcher_effects %>% 
+  ggplot(aes(x = effect)) +
+  geom_dotplot()
+```
+
+### Confounding
+
+OK, so far we've concluded the catcher makes a difference in called strike probability.  Let's say we compare a catcher with a called strike probability of 0.5 to another catcher with 0.6.  Would you conclude the difference is evidence one catcher is better at framing than the other? Explain.
+
+\vspace{1in}
+
+List variables would you adjust for to make better conclusions about catcher framing.
+
+\vspace{0.5in}
+
+### Adjusting for pitch location.
+
+Write a model for called strike probability with a catcher random effect that adjusts for pitch location.
+
+\vspace{1in}
+
+Instead of fitting the model above directly, we will first fit the pitch location model and then use predictions from it in the random effects model. 
+
+```{r}
+library(mgcv)
+library(broom)
+#fit pitch location model (plate_x = px, plate_z = pz)
+model.location <- gam(type == "S" ~ s(plate_x, plate_z),
+                      family = "binomial",
+                      data = taken)
+#get predictions from location model
+taken %>% 
+  mutate(strike_prob = predict(model.location, newdata = .,
+                               type = "response")) -> taken
+
+#fit random effects model adjusting for pitch location
+model.random.adj <- glmer(type == "S" ~ strike_prob + (1|catcher),
+                          family = "binomial",
+                          data = taken)
+summary(model.random.adj)
+
+#get random effects
+model.random.adj %>%
+  ranef() %>% 
+  as.tibble() %>% 
+  transmute(id = as.numeric(levels(grp)),
+            effect = condval) -> catcher_effects.adj
+catcher_effects.adj %>% head(5)
+catcher_effects.adj %>% 
+  ggplot(aes(x = effect)) +
+  geom_dotplot() 
+```
