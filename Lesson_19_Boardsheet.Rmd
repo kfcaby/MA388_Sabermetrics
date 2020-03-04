@@ -25,24 +25,26 @@ library(baseballr)
 
 #read in data
 pitches <- scrape_statcast_savant(start_date = "2017-05-01",
-                                  end_date = "2017-05-2")
+                                  end_date = "2017-05-10")
 #called strikes and balls only
 pitches %>% filter(type %in% c("S","B")) -> taken
 
 #add catcher's name to the taken data.frame
 #get master ID list
-master_id <- read_csv(file = "https://raw.githubusercontent.com/beanumber/baseball_R/master/data/masterid.csv")
-#merge with taken
+path = "https://raw.githubusercontent.com/beanumber/baseball_R/master/data/"
+file = "masterid.csv"
+master_id <- read_csv(paste(path,file, sep = ""))
+
+#merge with taken, note catcher's ID is the fielder_2_1 variable
 taken %>% 
   left_join(select(master_id,mlb_id,mlb_name),
             by = c("fielder_2_1" = "mlb_id")) %>% 
   rename(catcher = mlb_name) -> taken
-
 ```
 
 ### How much variability is there in called strike probability by catcher?
 
-First, let's see how much variability there is in called strike probabilities by catcher.  Note the catcher's ID is in the \texttt{fielder\_2\_1} variable. 
+First, let's see how much variability there is in called strike probabilities by catcher.  
 
 ```{r}
 library(ggrepel)
@@ -53,7 +55,7 @@ taken %>%
   count(type) %>% 
   pivot_wider(id_cols = catcher, names_from = type, values_from = n) -> catchers
 
-min.pitches = 100
+min.pitches = 300
 # filter catchers with less than min.pitches
 catchers %>% filter(S + B >= min.pitches) -> catchers
 
@@ -65,6 +67,7 @@ catchers %>% head(5)
 catchers %>% tail(5)
 ```
 
+Plot the distribution.
 
 ```{r, fig.height = 2, message = FALSE}
 catchers %>% 
@@ -89,13 +92,13 @@ Thus far in your education, when dealing with regression, you've probably only e
 
 where $catcher_j$ is an indicator (1/0) of whether catcher $j$ is the catcher on pitch $i$.
 
-How many parameters are in this model? \\
+How many parameters are in this model? \vspace{0.1in}
 
 What kinds of questions can we answer with this fixed effects model?
 
-\vspace{1in}
+\vspace{0.5in}
 
-Let's fit the model.
+Let's fit the fixed effects model.
 
 ```{r}
 model.fixed <- glm(type == "S" ~ as.factor(catcher), 
@@ -106,7 +109,7 @@ summary(model.fixed)
 
 What do we conclude from these results?
 
-\vspace{1in}
+\vspace{0.5in}
 
 ### Effect of catcher - random effects
 
@@ -118,17 +121,17 @@ The fixed effect model doesn't directly answer the question we are interested in
 
 where $catcher_j$ is the random effect of catcher $j$.
 
-How many parameters are in this model? \\
+How many parameters are in this model? \vspace{0.1in}
 
 What kinds of questions can we answer with this model? 
 
-\vspace{1in}
+\vspace{0.5in}
 
-Which parameter answers these questions? \\
+Which parameter answers these questions? \vspace{0.1in}
 
 Let's fit the random effects model.
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
 library(lme4)
 
 model.random <- glmer(type == "S" ~ (1|catcher), 
@@ -147,13 +150,15 @@ What do we conclude from this analysis?
 
 Let's look at the catcher random effects.
 
-```{r, fig.height = 2}
+```{r, fig.height = 2, warning = FALSE}
 model.random %>%
   ranef() %>% 
-  as.tibble() %>% 
-  transmute(id = as.numeric(levels(grp)),
-            effect = condval) -> catcher_effects
+  as_tibble() %>% 
+  transmute(id = levels(grp),
+            effect = condval) %>% 
+  arrange(desc(effect)) -> catcher_effects
 catcher_effects %>% head(5)
+catcher_effects %>% tail(5)
 catcher_effects %>% 
   ggplot(aes(x = effect)) +
   geom_dotplot()
@@ -171,13 +176,13 @@ List variables would you adjust for to make better conclusions about catcher fra
 
 ### Adjusting for pitch location.
 
-Write a model for called strike probability with a catcher random effect that adjusts for pitch location.
+Write a model for called strike probability adjusting for strike probability with a catcher random effect.
 
 \vspace{1in}
 
 Instead of fitting the model above directly, we will first fit the pitch location model and then use predictions from it in the random effects model. 
 
-```{r}
+```{r, message = FALSE, fig.height= 2}
 library(mgcv)
 library(broom)
 #fit pitch location model (plate_x = px, plate_z = pz)
@@ -198,10 +203,12 @@ summary(model.random.adj)
 #get random effects
 model.random.adj %>%
   ranef() %>% 
-  as.tibble() %>% 
-  transmute(id = as.numeric(levels(grp)),
-            effect = condval) -> catcher_effects.adj
+  as_tibble() %>% 
+  transmute(id = levels(grp),
+            effect = condval) %>% 
+  arrange(desc(effect)) -> catcher_effects.adj
 catcher_effects.adj %>% head(5)
+catcher_effects.adj %>% tail(5)
 catcher_effects.adj %>% 
   ggplot(aes(x = effect)) +
   geom_dotplot() 
