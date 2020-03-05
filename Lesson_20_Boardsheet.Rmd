@@ -1,0 +1,142 @@
+---
+title: "Lesson_20_Boardsheet"
+author: "Kevin Cummiskey"
+date: "3/5/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Review
+
+Last lesson, we discussed the difference between \textit{fixed effects} and \textit{random effects} in modeling catcher framing ability. 
+
+Briefly explain the difference between a fixed effect and a random effect. \vspace{0.25in}
+
+If you have 50 catchers, how many parameters are there in a fixed effects model? \vspace{0.25in}
+
+If you have 50 catchers, how many parameteris are there in a random effects model? \vspace{0.25in}
+
+If you wanted to know if Sandy Leon of the Boston Red Sox had a higher called strike percentage than other catchers, should you use a fixed or random effect? \vspace{0.25in}
+
+If you wanted to know if the variability in catcher called strike percentage is ``interesting", should you use a fixed or random effect? \vspace{0.25in}
+
+## Models with multiple random effects
+
+Last class, we discussed a model for called strike percentage with a catcher random effect that adjusts for pitch location.
+
+\[Strike_i \sim \text{Bernoulli}(p_i)\]
+\[\log\left(\frac{p}{1-p}\right) = \beta_0 + f(px, pz) + catcher_j\]
+\[catcher_j \sim \text{Normal}(0,\sigma^2)\]
+
+### Read in the data
+
+Follow the steps in Lesson 19 to read in Statcast data.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+library(tidyverse)
+library(devtools)
+
+#Do this once to install baseballr package
+#devtools::install_github("BillPetti/baseballr")
+library(baseballr)
+
+#read in data
+pitches <- scrape_statcast_savant(start_date = "2017-05-01",
+                                  end_date = "2017-05-10")
+#called strikes and balls only
+pitches %>% filter(type %in% c("S","B")) -> taken
+
+#add catcher's name to the taken data.frame
+path = "https://raw.githubusercontent.com/beanumber/baseball_R/master/data/"
+file = "masterid.csv"
+master_id <- read_csv(paste(path,file, sep = ""))
+
+#merge with taken, note catcher's ID is the fielder_2_1 variable
+taken %>% 
+  left_join(select(master_id,mlb_id,mlb_name),
+            by = c("fielder_2_1" = "mlb_id")) %>% 
+  rename(catcher = mlb_name) -> taken
+```
+
+### Fit the model adjusting for pitch location
+
+```{r, message = FALSE, fig.height= 2}
+library(mgcv)
+library(broom)
+library(lme4)
+library(ggrepel)
+#fit pitch location model (plate_x = px, plate_z = pz)
+model.location <- gam(type == "S" ~ s(plate_x, plate_z),
+                      family = "binomial",
+                      data = taken)
+#get predictions from location model
+taken %>% 
+  mutate(strike_prob = predict(model.location, newdata = .,
+                               type = "response")) -> taken
+
+#fit random effects model adjusting for pitch location
+model.random.adj <- glmer(type == "S" ~ strike_prob + (1|catcher),
+                          family = "binomial",
+                          data = taken)
+# random effects
+model.random.adj %>% tidy(effects = "ran_pars")
+# fixed effects
+model.random.adj %>% tidy(effects = "fixed")
+
+#get random effects
+model.random.adj %>%
+  ranef() %>% 
+  as_tibble() %>% 
+  transmute(id = levels(grp),
+            effect = condval) %>% 
+  arrange(desc(effect)) -> catcher_effects.adj
+
+catcher_effects.adj %>% head(4)
+catcher_effects.adj %>% tail(4)
+
+catcher_effects.adj %>% 
+  ggplot(aes(x = effect, label = id)) +
+  geom_dotplot() 
+```
+
+### Models with multiple random effects
+
+What other variables should we adjust for?
+
+\vspace{0.25in}
+
+Write a model adjusting pitch location (fixed effect) and for pitcher using a random effect.
+
+\vspace{0.25in}
+
+```{r, fig.height=2}
+#fit random effects model adjusting for pitch location and pitcher
+model.random.adj2 <- glmer(type == "S" ~ strike_prob + (1|catcher) + (1|pitcher),
+                          family = "binomial",
+                          data = taken)
+# random effects
+model.random.adj2 %>% tidy(effects = "ran_pars")
+
+# fixed effects
+model.random.adj2 %>% tidy(effects = "fixed")
+
+#get random effects
+model.random.adj2 %>%
+  ranef() %>% 
+  as_tibble() %>% 
+  filter(grpvar == "catcher") %>% 
+  transmute(id = grp,
+            effect = condval) %>% 
+  arrange(desc(effect)) -> catcher_effects.adj2
+
+catcher_effects.adj2 %>% head(4)
+catcher_effects.adj2 %>% tail(4)
+
+catcher_effects.adj2 %>% 
+  ggplot(aes(x = effect, label = id)) +
+  geom_dotplot() 
+```
+

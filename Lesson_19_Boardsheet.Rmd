@@ -176,7 +176,7 @@ List variables would you adjust for to make better conclusions about catcher fra
 
 ### Adjusting for pitch location.
 
-Write a model for called strike probability adjusting for strike probability with a catcher random effect.
+Write a model for called strike probability adjusting for pitch location with a catcher random effect.
 
 \vspace{1in}
 
