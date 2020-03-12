@@ -11,8 +11,10 @@ get_stats <- function(player.id){
            SLG = (H - X2B - X3B - HR +
              2 * X2B + 3*X3B + 4 * HR)/AB,
            OBP = (H + BB + HBP)/(AB + BB+ HBP + SF),
-           OPS = SLG + OBP) %>% 
-    select(Age, SLG, OBP, OPS)
+           OPS = SLG + OBP,
+           AVG = H/AB,
+           HR.rate = HR/AB) %>% 
+    select(playerID, Age, SLG, OBP, OPS, AVG, HR.rate)
 }
 
 #fits the quadratic model on pg 182 of the text
@@ -79,4 +81,37 @@ similar <- function(p, number=10){
     head(number)
 }
 
+plot_trajectories <- function(player, n.similar = 5, ncol = 2){
+  require(Lahman)
+  player = "Willie Mays"
+  flnames <- unlist(strsplit(player, " "))
+  
+  Master %>% 
+    filter(nameFirst == flnames[1],
+           nameLast == flnames[2]) %>% 
+    select(playerID) -> player
+  
+  player.list <- player %>% 
+    pull(playerID) %>% 
+    similar(n.similar) %>% 
+    pull(playerID)
+  
+  vars = c("G", "AB", "R", "H", "X2B",
+           "X3B", "HR", "RBI", "SB", "CS",
+           "BB", "SH","SF", "HBP")
+  
+  player.list %>% 
+    map_df(get_stats) %>% 
+    left_join(select(Master, playerID, nameLast, nameFirst),
+              by = "playerID") %>% 
+    mutate(Name = paste(nameFirst, 
+                        nameLast, 
+                        sep = " ")) -> player.stats
 
+  player.stats %>% 
+    ggplot(aes(x = Age, y = OPS)) +
+    geom_smooth(method = "lm",
+                formula = y ~ x + I(x^2),
+                size = 1.5) +
+    facet_wrap( ~ Name, ncol = ncol) + theme_bw()
+}
