@@ -1,0 +1,34 @@
+---
+title: "Lesson 22 Career Trajectories"
+author: "Kevin Cummiskey"
+date: "3/19/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+A convenient model for OPS as a function of age is a quadratic function:
+
+\[OPS = A + B(Age - 30) + C(Age - 30)^2\]
+
+What are some good reasons to use the quadratic model?
+\vspace{1in}
+
+What are some bad reasons to use the quadratic model?
+\vspace{1in}
+
+Why do we subtract 30 from $Age$ in the model?
+\vspace{1in}
+
+Based on this model, find an expression for the peak age. 
+\vspace{1.5in}
+
+Based on this model, find an expression for the peak OPS.
+\vspace{1.5in}
+
+In the quadratic model, explain what $C$ tells us about a player's trajectory.
+\vspace{1.5in}
+
+
