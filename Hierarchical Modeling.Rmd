@@ -1,0 +1,76 @@
+---
+title: "Hierarchical Modeling"
+author: "Kevin Cummiskey"
+date: "3/12/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Preparation
+
+We need on base percentage by age.
+
+```{r, message = FALSE}
+library(Lahman)
+library(tidyverse)
+library(brms)
+library(rstan)
+library(devtools)
+source("Chapter8_functions.R")
+
+find_rtools()
+#players born in 1974 with at least 1000 at-bats
+Master %>% 
+  filter(birthYear == 1974) %>% 
+  left_join(Batting, by = "playerID") %>% 
+  group_by(playerID) %>% 
+  summarize(AB = sum(AB)) %>% 
+  filter(AB >= 1000) %>% 
+  pull(playerID)-> players1974
+
+players1974 %>% 
+  map_df(get_stats)  %>% 
+  mutate(AgeD = Age - 30) %>% 
+  left_join(Master %>% select(playerID, nameLast, nameFirst),
+            by = "playerID") %>% 
+  mutate(Player = paste(nameFirst, nameLast, sep = " ")) %>% 
+  select(-nameLast,-nameFirst) -> player.stats
+
+```
+
+
+
+```{r}
+# the following code was adopted from Jim Albert
+# https://gist.github.com/bayesball/27079301fcfa43cb337d1442e61ea469
+
+
+fit <- brm(OB | trials(PA) ~ AgeD + I(AgeD ^ 2) + 
+             (AgeD + I(AgeD ^ 2) | Player),
+           data = players.stats,
+           family = binomial("logit"))
+
+Player_Fits <- coef(fit)$Player[, "Estimate", ] %>% 
+  as_tibble(rownames = "Player") %>% 
+  rename(b0.hat = Intercept,
+         b1.hat = AgeD,
+         b2.hat = IAgeDE2)
+
+# merge these estimates with our main dataset
+
+player.stats <- inner_join(player.stats, Player_Fits, by = "Player")
+
+# find estimates of OBP probs at each age
+# note plogis is the logit function
+player.stats %>% 
+  mutate(OBP.pred = plogis(b0.hat + b1.hat * AgeD + b2.hat * AgeD^2)) -> player.stats
+
+player.stats %>% 
+  ggplot(aes(x = Age + 30,
+             y = OBP.pred,
+             group = Player)) +
+  geom_line()
+```
