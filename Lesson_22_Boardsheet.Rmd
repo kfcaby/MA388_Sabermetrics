@@ -2,7 +2,9 @@
 title: "Lesson 22 Career Trajectories"
 author: "Kevin Cummiskey"
 date: "3/19/2020"
-output: pdf_document
+output:
+  pdf_document:
+    extra_dependencies: ["xcolor"]
 ---
 
 ```{r setup, include=FALSE}
@@ -14,10 +16,24 @@ A convenient model for OPS as a function of age is a quadratic function:
 \[OPS = A + B(Age - 30) + C(Age - 30)^2\]
 
 What are some good reasons to use the quadratic model?
-\vspace{1in}
+
+\color{red}
+
+* Simple, easy-to-interpret
+
+* Models a typical career (player improves initially as he gains experience with major league experience, peaks, and then starts to decline as age reduces eye sight and reflexes)
+
+\color{black}
 
 What are some bad reasons to use the quadratic model?
-\vspace{1in}
+
+\color{red}
+
+* No way to model multiple peaks
+
+* Assumes rate of improvement early in the career is the same as the rate of decline late in career
+
+\color{black}
 
 Why do we subtract 30 from $Age$ in the model?
 \vspace{1in}

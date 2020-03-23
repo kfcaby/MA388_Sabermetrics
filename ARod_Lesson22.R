@@ -7,8 +7,8 @@ Master %>%
   filter(nameLast == "Rodriguez", nameFirst == "Alex") %>% 
   pull(playerID) -> arod.id
 
-Batting %>% 
-  filter(playerID == arod.id)
+# Other playerIDs we might be interested in.
+player.ids <- c("rodrial01", "ortizda01", "jeterde01", "pujolal01")
 
 #get_stats (pg 180)
 
@@ -17,7 +17,19 @@ source("Chapter8_functions.R")
 
 get_stats(arod.id) -> ARod
 
-ARod %>% 
-  ggplot(aes(x = Age, y = OPS)) +
-  geom_point() +
-  labs("ARod :(")
+# plot data
+
+# fit model and extract coefficients
+
+# What is A (Poll)?
+
+# Compare to other players
+
+# Which player has the largest C in magnitude (poll)
+
+# Breaking these models is pretty easy (see Ortiz)
+
+
+
+           
+
