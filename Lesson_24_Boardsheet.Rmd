@@ -92,7 +92,7 @@ How do we fix these issues?
 
 Now, let's fit trajectories that pool information from all the players in the data set.
 
-```{r, cache = TRUE}
+```{r, cache = TRUE, warning=FALSE, message = FALSE}
 library(brms)
 library(rstan)
 player.stats %>% 
