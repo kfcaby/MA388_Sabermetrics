@@ -62,3 +62,26 @@ Ortiz.stats %>%
   geom_point(aes(Age,OPS))
   
 
+player.ids
+
+player.ids %>% 
+  map_df(get_stats) -> player.stats 
+
+player.stats %>% 
+  ggplot(aes(Age, OPS)) +
+  geom_point() + 
+  facet_wrap( ~ playerID)
+
+player.stats %>% 
+  split(pull(.,playerID)) %>% 
+  map(fit_model)
+
+library(lubridate)
+
+#1 Calculate Career AB
+
+
+Master %>% 
+  mutate(debut_year = year(debut)) %>% 
+  select(playerID, debut_year) 
+

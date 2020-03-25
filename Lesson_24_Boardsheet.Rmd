@@ -1,0 +1,181 @@
+---
+title: "Lesson 24 Boardsheet - Multilevel Modeling"
+author: "Kevin Cummiskey"
+date: "3/25/2020"
+output: 
+    pdf_document:
+urlcolor: blue
+---
+
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Today, we are going to investigate the limitations of the quadratic trajectories and discuss improvements using Bayesian statistics.  The reference for the next two lessons is:
+
+* ``Multilevel Modeling of OBP trajectories'' by Jim Albert. https://baseballwithr.wordpress.com/2019/11/25/multilevel-modeling-of-obp-trajectories/
+
+Learning Objectives:
+
+* Gain appreciation for how Bayesian statistics can help us combine prior knowledge with new observations to update our beliefs.
+
+* Gain appreciation for how multilevel modeling can ``pool'' information to arrive a better estimates for individuals.
+
+## Players who debuted in 2001.
+
+Let's find the players who debuted in the year 2001.
+
+```{r, message= FALSE, warning = FALSE} 
+library(Lahman)
+library(tidyverse)
+library(lubridate)
+library(ggrepel)
+
+#Players with debut in year 2000
+Master %>% 
+  filter(year(debut) == 2001) %>% 
+  pull(playerID) -> year2001.ids
+
+#Players with at least 1000 atbats
+Batting %>% 
+  filter(playerID %in% year2001.ids) %>% 
+  group_by(playerID) %>% 
+  summarize(AB = sum(AB)) %>% 
+  filter(AB > 1000) %>% 
+  pull(playerID) -> player.ids
+```
+
+The players who debuted in 2001 who would go on to have at least 1000 at bats are:
+
+```{r}
+library(knitr)
+Master %>% 
+  filter(playerID %in% player.ids) %>% 
+  select(nameFirst, nameLast) %>% 
+  kable()
+```
+
+## OBP trajectories
+
+Let's look at their OBP trajectories using the quadratic model fit individually to players.
+
+```{r, fig.height= 3}
+source("Chapter8_functions.R")
+
+# get statistics by age and add names
+player.ids %>% 
+  map_df(get_stats) %>% 
+  left_join(Master %>% select(nameLast, nameFirst, playerID))-> player.stats
+
+#plot trajectories
+player.stats %>% 
+  ggplot(aes(x = Age, y = OBP, group = playerID)) +
+  geom_smooth(method = "lm",
+              formula = y ~ x + I(x^2),
+              se = FALSE)
+```
+
+What do you think of these models?
+
+\vspace{1in}
+
+
+How do we fix these issues?
+
+\newpage
+
+## Bayesian Approach
+
+\newpage
+
+## Trajectories from Multilevel Models
+
+Now, let's fit trajectories that pool information from all the players in the data set.
+
+```{r, cache = TRUE}
+library(brms)
+library(rstan)
+player.stats %>% 
+  mutate(AgeD = Age - 30,
+         Player = paste(nameFirst,nameLast, sep = " ")) -> player.stats
+
+
+fit <- brm(OB | trials(PA) ~ AgeD + I(AgeD ^ 2) + 
+             (AgeD + I(AgeD ^ 2) | Player),
+           data = player.stats,
+           family = binomial("logit"))
+
+Player_Fits <- coef(fit)$Player[, "Estimate", ] %>% 
+  as_tibble(rownames = "Player") %>% 
+  rename(b0.hat = Intercept,
+         b1.hat = AgeD,
+         b2.hat = IAgeDE2)
+
+# merge these estimates with our main dataset
+
+player.stats <- inner_join(player.stats, Player_Fits, by = "Player")
+
+# find estimates of OBP probs at each age
+# note plogis is the logit function
+player.stats %>% 
+  mutate(OBP.pred = plogis(b0.hat + b1.hat * AgeD + b2.hat * AgeD^2)) -> player.stats
+
+player.stats %>% 
+  ggplot(aes(x = Age,
+             y = OBP.pred,
+             group = Player)) +
+  geom_line(color = "red")
+```
+
+What do you think of the new trajectories?
+
+\vspace{1in}
+
+
+Let's focus on one player who had a really weird individual trajectory:
+
+```{r}
+player.stats %>%
+  split(pull(.,playerID)) %>% 
+  map(fit_model)
+
+player.stats %>% 
+  filter(playerID == "custja01") %>%
+  ggplot(aes(x = Age, y = OBP)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              formula = y ~ x + I(x^2), se = FALSE) +
+  ylim(0,1) + xlim(20,40) +
+  geom_line(aes(y = OBP.pred), color = "red")
+```
+
+
+```{r, eval = FALSE, include = FALSE}
+# find peak ages using two models
+
+player.stats %>% group_by(Player) %>% 
+  summarize(B0 = first(B0),
+            B1 = first(B1),
+            B2 = first(B2),
+            b0 = first(Intercept),
+            b1 = first(AgeD.y),
+            b2 = first(IAgeDE2)) %>% 
+  mutate(Ind_Peak_Age = 30 - B1 / 2 / B2,
+           MLM_Peak_Age = 30 - b1 / 2 / b2)  %>% 
+  select(Ind_Peak_Age, MLM_Peak_Age) %>% 
+  pivot_longer(everything(),
+               names_to = "Type",
+               values_to = "Age") -> S
+
+# graph two sets of peak ages
+
+ggplot(S, aes(Type, Age)) +
+  geom_point() +
+  coord_flip() +
+  increasefont() +
+  ggtitle("Estimates of Peak Age") +
+  centertitle()
+
+```
+
+
