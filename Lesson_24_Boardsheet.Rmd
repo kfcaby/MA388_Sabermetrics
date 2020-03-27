@@ -135,10 +135,6 @@ What do you think of the new trajectories?
 Let's focus on one player who had a really weird individual trajectory:
 
 ```{r}
-player.stats %>%
-  split(pull(.,playerID)) %>% 
-  map(fit_model)
-
 player.stats %>% 
   filter(playerID == "custja01") %>%
   ggplot(aes(x = Age, y = OBP)) +
