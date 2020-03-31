@@ -16,7 +16,7 @@ get_stats <- function(player.id){
            HR.rate = HR/AB,
            OB = (H + BB + HBP),
            PA = (AB + BB + HBP + SF)) %>% 
-    select(playerID, Age, yearID, SLG, OBP, OPS, AVG, HR.rate, OB, PA)
+    select(playerID, Age, yearID, SLG, OBP, OPS, AVG, HR.rate, OB, PA, HR, AB)
 }
 
 #fits the quadratic model on pg 182 of the text
