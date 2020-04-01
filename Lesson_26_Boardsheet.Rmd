@@ -2,7 +2,7 @@
 title: "Lesson_26_Boardsheet - Equivalence Coefficient"
 author: "Kevin Cummiskey"
 date: "3/30/2020"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -110,8 +110,8 @@ p2 <- career.totals %>%
                   aes(x = H, y = HR), color = "black") +
   labs(title = "Career Totals by Hall of Fame Status")
 
-#ggplotly(p2)
-p2
+ggplotly(p2)
+#p2
 ```
 
 ### A logistic regression model predecting hall of fame selection.
@@ -142,7 +142,7 @@ career.totals %>%
 
 Let's compare Don Mattingly and Harold Baines. 
 
-```{r, fig.height = 3}
+```{r}
 
 # Relative Statistics
 
@@ -155,8 +155,8 @@ p1 <- career.totals %>%
                   aes(x = AVG, y = HR.rate), color = "black") +
   labs(title = "Career Totals by Hall of Fame Status")
 
-#ggplotly(p1)
-p1
+ggplotly(p1)
+#p1
 
 career.totals %>% 
   filter(playerID %in% c("mattido01","baineha01")) %>% 
