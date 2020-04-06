@@ -1,0 +1,99 @@
+---
+title: "coronavirus"
+author: "Kevin Cummiskey"
+date: "4/2/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Here is an overview of some of the COVID-19 tools out there.
+
+* Coronovirus package
+
+```{r}
+library(tidyverse)
+library(directlabels)
+
+coronavirus <- read_csv(file = "https://raw.githubusercontent.com/RamiKrispin/coronavirus-csv/master/coronavirus_dataset.csv")
+
+coronavirus %>% 
+  group_by(Country.Region, type, date) %>% 
+  summarise(cases = sum(cases)) %>% 
+  group_by(Country.Region, type) %>% 
+  mutate(cases_cum = cumsum(cases))  -> covid_country
+
+#Other States
+covid_country %>% 
+  filter(Country.Region == "US") %>% 
+  ggplot(aes(x = date, y = cases_cum, color = type)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "United States", y = "Cumulative Cases") +
+  scale_color_manual(values =  c("green", "red", "blue"))
+
+covid_country %>% 
+  filter(type == "confirmed") %>% 
+  group_by(Country.Region) %>% 
+  arrange(-cases_cum) %>% 
+  top_n(1, cases_cum) %>% 
+  filter(cases_cum > 10000) %>% 
+  pull(Country.Region) -> top.countries
+  
+  
+covid_country %>% 
+  filter(type == "confirmed", Country.Region %in% top.countries) %>% 
+  ggplot(aes(x = date, y = cases_cum, group = Country.Region, color = Country.Region)) +
+  geom_line() +
+  labs(title = "Confirmed Cases by Country", y = "Cumulative Cases") +
+  geom_dl(aes(label = Country.Region), method="last.qp") +
+  theme(legend.position = "none")
+```
+
+## Make a map
+
+```{r}
+
+library(maps)
+library(mapproj)
+library(ggthemes)
+library(viridis)
+
+# Map Data
+world <- map_data("world")
+
+
+# Add coronavirus data
+coronavirus %>% 
+  filter(type == "confirmed") %>% 
+  group_by(Country.Region, type) %>%
+  summarize(cases = sum(cases, na.rm = TRUE)) %>% 
+  group_by() %>% 
+  mutate(Country.Region = replace(Country.Region, Country.Region == "US","USA")) -> country.cases
+
+
+
+world %>% 
+  left_join(country.cases, by = c("region" = "Country.Region")) %>% 
+  replace_na(list(cases = 0)) -> world
+
+ggplot(data = world,
+            mapping = aes(x = long, y = lat,
+                          group = group,
+                          fill = cases)) + 
+  geom_polygon(color = "gray90", size = 0.1) +
+  labs(title = "Election Results 2016", fill = NULL) +
+  theme_map() +
+  scale_fill_viridis()
+```
+
+## Modeling
+
+Modeling COVID-19 Spread vs Healthcare Capacity
+
+https://alhill.shinyapps.io/COVID19seir/
+
+

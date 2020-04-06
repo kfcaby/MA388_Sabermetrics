@@ -58,7 +58,6 @@ player.ids %>%
   left_join(Master %>% select(nameLast, nameFirst, playerID)) %>% 
   mutate(name = paste(nameFirst, nameLast, sep = " ")) -> player.stats
 
-
 player.stats %>% 
   ggplot(aes(x = Age, y = HR, shape = name, color = name)) +
   geom_point() + theme_bw() + theme_classic()

@@ -1,0 +1,258 @@
+---
+title: "Lesson_28_Boardsheet"
+author: "Kevin Cummiskey"
+date: "4/3/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.height = 3,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+## Review
+
+What characteristics of a hitter does OPS quantify?
+
+\vspace{1in}
+
+Why might one use OPS+ or adjusted OPS+ instead of OPS?
+
+\vspace{1in}
+
+What are some limitations of these statistics?
+
+\vspace{1in}
+
+## Linear Weights
+
+Recall we talked about the relationship between Runs and Wins in Chapter 4 of the Marchi text.  What was the rule of thumb we used?
+
+\vspace{1in}
+
+(*Understanding Sabermetrics* pg 83) Ideally, we want a statistic for batters that:
+
+* quantifies their contribution to runs scored.
+
+* is not based upon the situations the batters faced when they came to the plate (since their batting actions did not create those situations).
+
+How about RBI's? A batter is awarded Runs Batted In (RBIs) for most situations when his plate appearance results in runs scored.  Why are RBIs not a good measure of a player's contribution to runs scored?
+
+\vspace{1in}
+
+Various researchers have proposed linear models to quantify a player's contribution to runs scored.  These models weight individual statistics.  For the purposes of today's lesson, let's investigate the condensed model proposed by Thorn and Palmer (*Understanding Sabermetrics*, pg 87). I'll refer to this model as the Linear Weights Model
+
+\[Batting Runs = w_1\text{1B} + w_2\text{2B} + w_3\text{3B} + w_4\text{HR} + w_5 (\text{BB}+\text{HBP}) - w_6(AB-H)\]
+
+How can we get weights for the Linear Weights Model?
+
+\vspace{2in}
+
+How do we interpret $Batting Runs$?
+
+\vspace{1in}
+
+Let's see what this looks like for the 2018 season.
+
+```{r}
+library(Lahman)
+library(tidyverse)
+library(plotly)
+library(knitr)
+
+# Calculate weights from run values using Retrosheet play-by-play data
+# this code will only run if you have a 2018 retrosheet
+# event-by-event data on your computer.
+source("../MA388_Solutions/linear_weights.R")
+weights <- linear_weights(2018) %>% pluck("weights")
+weights %>% kable(digits = 3)
+```
+
+\newpage
+
+How do these weights compare to those in slugging percentage (SLG)?
+
+\vspace{2in}
+
+
+```{r}
+# 2018 Players with at least 500 at bats
+vars = c("AB", "H", "X2B", "X3B", "HR", "BB",
+         "HBP", "SF","RBI")
+Batting %>% 
+  filter(yearID == 2018) %>% 
+  group_by(playerID) %>% 
+  summarise_at(vars, sum) %>% 
+  filter(AB >= 500) %>% 
+  left_join(Master %>% select(nameLast,nameFirst,playerID)) %>% 
+  mutate(name = paste(nameFirst, nameLast, sep = " ")) %>% 
+  select(name, everything(), -nameLast,-nameFirst) %>% 
+  mutate(X1B = H - X2B - X3B - HR,
+         SLG = (X1B + 2*X2B + 3*X3B + 4*HR)/AB,
+         OBP = (H + HBP + BB)/(AB + HBP + SF + BB),
+         OPS = SLG + OBP,
+         AVG = H/AB) -> batting.2018
+
+#calculates Batting Runs using Thorn and Palmer's condensed Linear Weights model. 
+#note statistics and weights have to be in the same order
+batting_runs <- function(statistics, weights){
+  runs <- round(sum(statistics*weights),1)
+  return(runs)
+}
+
+batting.2018 %>%
+  group_by(playerID) %>% 
+  mutate(batting.runs = batting_runs(statistics = c(X1B, X2B, X3B, BB + HBP, HR, AB - H),
+                                     weights = weights %>% pull(weight))) %>% 
+  arrange(-batting.runs) %>% 
+  group_by()-> batting.2018
+  
+batting.2018 %>% 
+  select(name, AB, H, HR, RBI, AVG, OPS, batting.runs) %>% 
+  head(10) %>% 
+  kable(digits = 3, 
+        caption = "Top 10 MLB Players (with at least 500 at bats) - Batting Runs 2018")
+```
+
+How many wins would you attribute to Mookie Betts in the 2018 season?
+
+\vspace{0.5in}
+
+```{r}
+batting.2018 %>% 
+  select(name, AB, H, HR, RBI, AVG, OPS, batting.runs) %>% 
+  tail(10) %>% 
+  kable(digits = 3,
+        caption = "Bottom 10 MLB Players (with at least 500 at bats) - Batting Runs 2018")
+```
+
+Let's see how $Batting Runs$ compare to traditional statistics.
+
+```{r, fig.height=4}
+library(gridExtra)
+
+title.size = 12
+
+p.rbi <- batting.2018 %>% 
+  ggplot(aes(label = name,
+             x = batting.runs,
+             y = RBI)) +
+  geom_point() +
+  labs(title = "Linear Weights vs. RBI") +
+  theme_classic() +
+  theme(plot.title = element_text(size = title.size))
+
+p.avg <- batting.2018 %>% 
+  ggplot(aes(label = name,
+             x = batting.runs,
+             y = AVG)) +
+  geom_point() +
+  labs(title = "Linear Weights vs. Batting Average") +
+  theme_classic() +
+  theme(plot.title = element_text(size = title.size))
+
+
+p.slg <- batting.2018 %>% 
+  ggplot(aes(label = name,
+             x = batting.runs,
+             y = SLG)) +
+  geom_point() +
+  labs(title = "Linear Weights vs. Slugging") +
+  theme_classic() +
+  theme(plot.title = element_text(size = title.size))
+
+p.ops <- batting.2018 %>% 
+  ggplot(aes(label = name,
+             x = batting.runs,
+             y = OPS)) +
+  geom_point() +
+  labs(title = "Linear Weights vs. OPS") + theme_classic() +
+  theme(plot.title = element_text(size = title.size))
+
+grid.arrange(p.rbi,p.avg, p.slg, p.ops, ncol = 2)
+
+#ggplotly(p.rbi)
+#ggplotly(p.avg)
+#ggplotly(p.slg)
+#ggplotly(p.ops)
+```
+
+Let's say you're a general manager.  Which statistic would you use?
+
+\vspace{1in}
+
+What other factors would you want to consider?
+
+\vspace{2in}
+
+In terms of $BattingRuns$, is it more important to hit for power or on base percentage?
+
+\vspace{1in}
+
+```{r, fig.height=3}
+library(viridis)
+batting.2018 %>% 
+  mutate(OBP.scaled = scale(OBP),
+         SLG.scaled = scale(SLG),
+         br.scaled = scale(batting.runs)) %>% 
+  ggplot(aes(x = OBP.scaled, y = SLG.scaled, color = br.scaled)) +
+  geom_point() +
+  scale_color_viridis() +
+  geom_abline(slope = 1, intercept = 0)
+```
+
+
+```{r, include=FALSE, eval = FALSE} 
+# 2018 players
+Batting %>% 
+  filter(yearID == 2016) %>% 
+  group_by(playerID) %>% 
+  summarize(X2B = sum(X2B),
+            X3B = sum(X3B),
+            HR = sum(HR),
+            AB = sum(AB),
+            BB = sum(BB),
+            H = sum(H)) %>% 
+  mutate(X1B = H - X2B - X3B - HR) %>% 
+  filter(AB > 100) -> batting.2016
+
+Salaries %>% 
+  filter(yearID == 2016) %>% 
+  group_by(playerID) %>% 
+  summarize(salary = sum(salary)) %>% 
+  mutate(salary.million = round(salary/1000000,2)) -> salary.2016
+
+batting.2016 %>% 
+  left_join(salary.2016, by = "playerID") %>% 
+  left_join(select(Master, nameLast, nameFirst,playerID, debut)) %>% 
+  mutate(name = paste(nameFirst, nameLast, sep = " ")) %>% 
+  select(name,everything(),-nameLast,-nameFirst) -> batting.2016
+
+p <- batting.2016 %>% 
+  pivot_longer(cols = X2B:X1B,
+               names_to = "statistic",
+               values_to = "value") %>%
+  filter(statistic %in% c("H", "HR")) %>% 
+  ggplot(aes(x = value, 
+             y = salary.million,
+             label = name)) +
+  geom_point() +
+  facet_wrap(~ statistic, ncol = 2, scales = "free_x") +
+  theme_bw() 
+
+ggplotly(p)
+```
+
+
+
+```{r, include = FALSE, eval = FALSE}
+library(GGally)
+
+plot_coord <- ggparcoord(batting.2016,
+           columns = 3:9,
+           showPoints = TRUE) +
+  
+ggplotly(plot_coord)
+```
