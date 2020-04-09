@@ -2,7 +2,7 @@
 title: "coronavirus"
 author: "Kevin Cummiskey"
 date: "4/2/2020"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +26,7 @@ coronavirus %>%
   group_by(Country.Region, type) %>% 
   mutate(cases_cum = cumsum(cases))  -> covid_country
 
-#Other States
+
 covid_country %>% 
   filter(Country.Region == "US") %>% 
   ggplot(aes(x = date, y = cases_cum, color = type)) +

@@ -2,7 +2,7 @@
 title: "Lesson_28_Boardsheet"
 author: "Kevin Cummiskey"
 date: "4/3/2020"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -173,10 +173,10 @@ p.ops <- batting.2018 %>%
 
 grid.arrange(p.rbi,p.avg, p.slg, p.ops, ncol = 2)
 
-#ggplotly(p.rbi)
-#ggplotly(p.avg)
-#ggplotly(p.slg)
-#ggplotly(p.ops)
+ggplotly(p.rbi)
+ggplotly(p.avg)
+ggplotly(p.slg)
+ggplotly(p.ops)
 ```
 
 Let's say you're a general manager.  Which statistic would you use?
