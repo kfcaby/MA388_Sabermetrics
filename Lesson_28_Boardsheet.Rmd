@@ -255,4 +255,5 @@ plot_coord <- ggparcoord(batting.2016,
            showPoints = TRUE) +
   
 ggplotly(plot_coord)
+
 ```
