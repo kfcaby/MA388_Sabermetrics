@@ -19,7 +19,9 @@ library(viridis)
 library(lubridate)
 ```
 
-Today, we are going to look at how the probability of a hit changes with launch angle and speed.  
+## Launch Angle/Speed and Hit Probability
+
+Today, we are going to look at how the probability of a hit changes with launch angle and speed.  Much of the code for today's lesson comes from Chapter 12 of *Analyzing Baseball Data with R* by Marchi et al.
 
 https://www.mlb.com/news/new-statcast-metric-barrels-has-best-hit-balls-c201699298
 
