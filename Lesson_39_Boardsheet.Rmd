@@ -34,7 +34,7 @@ First, let's download StatCast data for 2017 using the scrape\_statcast\_savant 
 
 #March 31, 2017 to April 13, 2017
 scrape_statcast_savant(start_date = as_date(17256), end_date = as_date(17270)) 
-#April 14, 2017 to April 28, 2017
+  #April 14, 2017 to April 28, 2017
 scrape_statcast_savant(start_date = as_date(17271), end_date = as_date(17285)) 
 
 # This is going to get tedious going all the way to September
@@ -71,6 +71,11 @@ Now, we have a data frame called \texttt{batted2017} containing all batted balls
 batted2017 %>% 
   mutate(hit_flag = factor(ifelse(events %in% c("single", "double",
                                          "triple", "home_run"),1,0))) -> batted2017
+
+#batted2017 %>% 
+#  select(player_name, stand, hc_x, hc_y, launch_angle, launch_speed, if_fielding_alignment) %>% 
+#  write_csv(path = "data/teeStatCast.csv")
+
 
 #Plot each batted ball by whether it's a hit or not
 guidelines <- tibble(
@@ -134,7 +139,7 @@ batted100mph %>%
 
 Here are hit probabilities for each batted ball in the 2017.
 
-```{r}
+```{r, cache = TRUE, dev = 'png'}
 batted2017 %>% 
   mutate(hit.prob = predict(fit, 
                             type = "response",
@@ -165,6 +170,6 @@ batted2017 %>%
   filter(hit_flag == 0) %>% 
   arrange(-hit.prob) %>% 
   head(1) %>% 
-  select(player_name, launch_angle, launch_speed, events)
+  select(player_name, launch_angle, launch_speed, events, hit.prob, home_team)
 ```
 
